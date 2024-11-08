@@ -1,4 +1,4 @@
-const LRUCache = require("lru-cache");
+const { LRUCache } = require("lru-cache");
 
 class RammerheadJSMemCache {
   constructor(jsCacheSize) {

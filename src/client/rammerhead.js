@@ -541,8 +541,9 @@
       }
     });
     rewriteFunction("removeItem", function (key) {
-      delete this
-        .internal.nativeStorage[toRealStorageKey(key, this.internal.ctx)];
+      delete this.internal.nativeStorage[
+        toRealStorageKey(key, this.internal.ctx)
+      ];
     });
   }
 

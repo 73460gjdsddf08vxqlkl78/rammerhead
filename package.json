@@ -25,20 +25,20 @@
   "homepage": "https://github.com/binary-person/rammerhead#readme",
   "dependencies": {
     "async-exit-hook": "^2.0.1",
-    "lru-cache": "^7.14.1",
-    "mime": "^2.5.2",
-    "sticky-session-custom": "^1.2.0",
-    "testcafe-hammerhead": "31.6.2",
-    "uglify-js": "^3.15.3",
-    "uuid": "^8.3.2",
-    "ws": "^8.2.0"
+    "lru-cache": "^11.0.2",
+    "mime": "^2.6.0",
+    "sticky-session-custom": "^1.2.1",
+    "testcafe-hammerhead": "^31.7.4",
+    "uglify-js": "^3.19.3",
+    "uuid": "^11.0.2",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
-    "dotenv-flow": "^3.2.0",
-    "eslint": "^7.32.0",
-    "npm-force-resolutions": "0.0.10",
-    "prettier": "^2.3.2"
+    "dotenv-flow": "^3.3.0",
+    "eslint": "^9.14.0",
+    "npm-force-resolutions": "^0.0.10",
+    "prettier": "^3.3.3"
   },
   "resolutions": {
     "tmp": "0.2.1"
