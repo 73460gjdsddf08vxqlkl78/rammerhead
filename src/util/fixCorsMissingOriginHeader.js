@@ -1,5 +1,5 @@
-const transforms = require('testcafe-hammerhead/lib/request-pipeline/header-transforms/transforms');
-const BUILTIN_HEADERS = require('testcafe-hammerhead/lib/request-pipeline/builtin-header-names');
+const transforms = require("testcafe-hammerhead/lib/request-pipeline/header-transforms/transforms");
+const BUILTIN_HEADERS = require("testcafe-hammerhead/lib/request-pipeline/builtin-header-names");
 
 /**
  * if we create this server with port === crossDomainPort, origin header doesn't get properly sent

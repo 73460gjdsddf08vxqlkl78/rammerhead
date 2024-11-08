@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const cluster = require('cluster');
-const LRUCache = require('lru-cache');
+const fs = require("fs");
+const path = require("path");
+const cluster = require("cluster");
+const LRUCache = require("lru-cache");
 
 class RammerheadJSFileCache {
   constructor(diskJsCachePath, jsCacheSize, maxItems, enableWorkerMode) {
@@ -9,14 +9,14 @@ class RammerheadJSFileCache {
      * this lru cache will be treated as such: key => jsFileSize
      * when cache item gets evicted, then it will call dispose(), which will
      * delete the actual file.
-     * 
-     * 
+     *
+     *
      * enableWorkerMode === true will create a system where
      * master will handle deleting, and writing to cache.
      * it will also tell workers what is and isn't cached.
-     * 
+     *
      * worker will ask master if file is cached, and retrieve it if it exists.
-     * 
+     *
      * ids are to keep track which read requests go to whose and resolve the corresponding
      * promises
      */
@@ -25,10 +25,14 @@ class RammerheadJSFileCache {
     this.askPromiseId = 0;
 
     if (!fs.existsSync(diskJsCachePath)) {
-      throw new TypeError('disk cache folder does not exist: ' + diskJsCachePath);
+      throw new TypeError(
+        "disk cache folder does not exist: " + diskJsCachePath,
+      );
     }
     if (!fs.lstatSync(diskJsCachePath).isDirectory()) {
-      throw new TypeError('disk cache folder must be a directory: ' + diskJsCachePath);
+      throw new TypeError(
+        "disk cache folder must be a directory: " + diskJsCachePath,
+      );
     }
 
     this.diskJsCachePath = diskJsCachePath;
@@ -36,10 +40,10 @@ class RammerheadJSFileCache {
     this.lruMarker = new LRUCache({
       max: maxItems,
       maxSize: jsCacheSize,
-      sizeCalculation: n => n || 1,
+      sizeCalculation: (n) => n || 1,
       dispose(_, key) {
         fs.unlinkSync(path.join(diskJsCachePath, key));
-      }
+      },
     });
 
     // multiple workers doing this will cause chaos
@@ -48,7 +52,7 @@ class RammerheadJSFileCache {
       // also, atime seems to not work reliably. see https://superuser.com/a/464737
       const initFileList = [];
       for (const file of fs.readdirSync(diskJsCachePath)) {
-        if (file === '.gitkeep') continue;
+        if (file === ".gitkeep") continue;
         const stat = fs.statSync(path.join(diskJsCachePath, file));
         initFileList.push({ key: file, size: stat.size });
       }
@@ -61,7 +65,7 @@ class RammerheadJSFileCache {
           continue;
         }
         this.lruMarker.set(file.key, file.size, {
-          noDisposeOnSet: true
+          noDisposeOnSet: true,
         });
       }
     }
@@ -70,14 +74,20 @@ class RammerheadJSFileCache {
     if (enableWorkerMode) {
       // rjc = rh-js-cache
       if (cluster.isMaster) {
-        cluster.on('fork', worker => {
-          worker.on('message', msg => {
-            if (msg.type !== 'rjc') return;
-            if (!msg.key) throw new TypeError('missing key');
+        cluster.on("fork", (worker) => {
+          worker.on("message", (msg) => {
+            if (msg.type !== "rjc") return;
+            if (!msg.key) throw new TypeError("missing key");
             if (!msg.value) {
               // read request
-              if (typeof msg.id !== 'number' || isNaN(msg.id)) throw new TypeError('missing id');
-              worker.send({ type: 'rjc', key: msg.key, id: msg.id, exists: !!this.lruMarker.get(msg.key) });
+              if (typeof msg.id !== "number" || isNaN(msg.id))
+                throw new TypeError("missing id");
+              worker.send({
+                type: "rjc",
+                key: msg.key,
+                id: msg.id,
+                exists: !!this.lruMarker.get(msg.key),
+              });
             } else {
               // write request
               this.set(msg.key, msg.value);
@@ -86,10 +96,12 @@ class RammerheadJSFileCache {
         });
       } else {
         this.lruMarker = null; // make sure we never use this
-        process.on('message', msg => {
-          if (msg.type !== 'rjc') return;
-          if (typeof msg.id !== 'number' || isNaN(msg.id)) throw new TypeError('missing id');
-          if (typeof msg.exists !== 'boolean') throw new TypeError('missing exists');
+        process.on("message", (msg) => {
+          if (msg.type !== "rjc") return;
+          if (typeof msg.id !== "number" || isNaN(msg.id))
+            throw new TypeError("missing id");
+          if (typeof msg.exists !== "boolean")
+            throw new TypeError("missing exists");
           // read-request response
           this.askPromises[msg.id](msg.exists);
         });
@@ -101,14 +113,14 @@ class RammerheadJSFileCache {
   }
   async askMasterGet(key) {
     if (!this.isWorker()) {
-      throw new TypeError('worker use only');
+      throw new TypeError("worker use only");
     }
     const id = this.askPromiseId++;
 
-    process.send({ type: 'rjc', id, key });
+    process.send({ type: "rjc", id, key });
 
-    return await new Promise(resolve => {
-      this.askPromises[id] = exists => {
+    return await new Promise((resolve) => {
+      this.askPromises[id] = (exists) => {
         delete this.askPromises[id];
         resolve(exists);
       };
@@ -116,14 +128,16 @@ class RammerheadJSFileCache {
   }
   askMasterSet(key, value) {
     if (!this.isWorker()) {
-      throw new TypeError('worker use only');
+      throw new TypeError("worker use only");
     }
 
-    process.send({ type: 'rjc', key, value });
+    process.send({ type: "rjc", key, value });
   }
   async get(key) {
-    if (this.isWorker() ? await this.askMasterGet(key) : this.lruMarker?.get(key)) {
-      return fs.readFileSync(path.join(this.diskJsCachePath, key), 'utf-8');
+    if (
+      this.isWorker() ? await this.askMasterGet(key) : this.lruMarker?.get(key)
+    ) {
+      return fs.readFileSync(path.join(this.diskJsCachePath, key), "utf-8");
     }
     return undefined;
   }
@@ -132,7 +146,7 @@ class RammerheadJSFileCache {
       this.askMasterSet(key, value);
     } else {
       this.lruMarker.set(key, value.length);
-      fs.writeFileSync(path.join(this.diskJsCachePath, key), value, 'utf-8');
+      fs.writeFileSync(path.join(this.diskJsCachePath, key), value, "utf-8");
     }
   }
 }
